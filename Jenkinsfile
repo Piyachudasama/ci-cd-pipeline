@@ -8,115 +8,88 @@ pipeline {
     stages {
         stage('Build Application') {
             steps {
-                echo 'Starting the build process with Maven...'
-                // sh 'mvn clean install'
+                echo 'Building the application...'
+                // Replace this with actual build commands
+                // Example: sh 'mvn clean install'
             }
         }
+
         stage('Run Unit and Integration Tests') {
             steps {
-                echo 'Running unit and integration tests using JUnit and Selenium...'
-                // sh 'mvn test'
+                echo 'Running unit and integration tests...'
+                // Replace this with actual test commands
+                // Example: sh 'mvn test'
             }
             post {
-                success {
+                always {
+                    echo "Sending test result email to: ${RECIPIENT_EMAIL}"
                     emailext(
-                        subject: "SUCCESS: Unit & Integration Tests for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                        body: """<p>All unit and integration tests have passed for the project <b>${env.JOB_NAME}</b>.</p>
-                                 <p>Logs are attached for further review.</p>""",
+                        subject: "Test Result: ${currentBuild.currentResult} for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                        body: """
+                            <p>Test result: <b>${currentBuild.currentResult}</b></p>
+                            <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                            """,
                         to: "${RECIPIENT_EMAIL}",
                         mimeType: 'text/html',
                         attachLog: true
                     )
-                }
-                failure {
-                    emailext(
-                        subject: "FAILURE: Unit & Integration Tests for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                        body: """<p>There was a failure in the unit and integration tests for the project <b>${env.JOB_NAME}</b>.</p>
-                                 <p>Please check the attached logs for detailed information.</p>""",
-                        to: "${RECIPIENT_EMAIL}",
-                        mimeType: 'text/html',
-                        attachLog: true
-                    )
+                    echo "Test result email sent to: ${RECIPIENT_EMAIL}"
                 }
             }
         }
-        stage('Perform Static Code Analysis') {
+
+        stage('Deploy Application') {
             steps {
-                echo 'Running static code analysis using SonarQube...'
-                // sh 'sonar-scanner'
-            }
-        }
-        stage('Security Scan') {
-            steps {
-                echo 'Running security scan with OWASP Dependency-Check...'
-                // sh 'dependency-check --scan .'
-            }
-            post {
-                success {
-                    emailext(
-                        subject: "SUCCESS: Security Scan for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                        body: """<p>The security scan for <b>${env.JOB_NAME}</b> was completed successfully.</p>
-                                 <p>Please review the attached logs for more details.</p>""",
-                        to: "${RECIPIENT_EMAIL}",
-                        mimeType: 'text/html',
-                        attachLog: true
-                    )
-                }
-                failure {
-                    emailext(
-                        subject: "FAILURE: Security Scan for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                        body: """<p>The security scan for <b>${env.JOB_NAME}</b> encountered issues and failed.</p>
-                                 <p>Logs have been attached for your review.</p>""",
-                        to: "${RECIPIENT_EMAIL}",
-                        mimeType: 'text/html',
-                        attachLog: true
-                    )
-                }
-            }
-        }
-        stage('Deploy to Staging Environment') {
-            steps {
-                echo 'Deploying the application to the staging environment...'
-                // sh 'aws deploy staging-app'
-            }
-        }
-        stage('Run Staging Tests') {
-            steps {
-                echo 'Running integration tests on the staging environment...'
-                // sh './run-staging-tests.sh'
-            }
-        }
-        stage('Deploy to Production Environment') {
-            steps {
-                echo 'Deploying the application to the production environment...'
-                // sh 'aws deploy production-app'
+                echo 'Deploying the application...'
+                // Replace this with actual deployment commands
             }
         }
     }
 
     post {
-        success {
-            emailext(
-                subject: "SUCCESS: Pipeline Execution for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                body: """<p>The Jenkins pipeline for <b>${env.JOB_NAME}</b> was successfully completed.</p>
-                         <p>Logs are attached for review.</p>""",
-                to: "${RECIPIENT_EMAIL}",
-                mimeType: 'text/html',
-                attachLog: true
-            )
-        }
-        failure {
-            emailext(
-                subject: "FAILURE: Pipeline Execution for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                body: """<p>The Jenkins pipeline for <b>${env.JOB_NAME}</b> failed.</p>
-                         <p>Please check the attached logs for more information.</p>""",
-                to: "${RECIPIENT_EMAIL}",
-                mimeType: 'text/html',
-                attachLog: true
-            )
-        }
         always {
-            echo 'Pipeline execution completed.'
+            echo "Sending final pipeline status email to: ${RECIPIENT_EMAIL}"
+            emailext(
+                subject: "Pipeline Completed: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <p>Pipeline status: <b>${currentBuild.currentResult}</b></p>
+                    <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    """,
+                to: "${RECIPIENT_EMAIL}",
+                mimeType: 'text/html',
+                attachLog: true
+            )
+            echo "Final pipeline status email sent to: ${RECIPIENT_EMAIL}"
+        }
+
+        success {
+            echo "Sending success email to: ${RECIPIENT_EMAIL}"
+            emailext(
+                subject: "SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <p>The build was successful for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}</p>
+                    <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    """,
+                to: "${RECIPIENT_EMAIL}",
+                mimeType: 'text/html',
+                attachLog: true
+            )
+            echo "Success email sent to: ${RECIPIENT_EMAIL}"
+        }
+
+        failure {
+            echo "Sending failure email to: ${RECIPIENT_EMAIL}"
+            emailext(
+                subject: "FAILURE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <p>The build failed for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}</p>
+                    <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    """,
+                to: "${RECIPIENT_EMAIL}",
+                mimeType: 'text/html',
+                attachLog: true
+            )
+            echo "Failure email sent to: ${RECIPIENT_EMAIL}"
         }
     }
 }
