@@ -6,75 +6,81 @@ pipeline {
     }
 
     stages {
-        stage('Build Application') {
+        stage('Build') {
             steps {
-                echo 'Building the application...'
-                // Add your build commands here, for example: sh 'mvn clean install'
+                echo 'Building the application using Maven...'
+                // sh 'mvn clean package'
             }
         }
 
-        stage('Run Unit and Integration Tests') {
+        stage('Unit and Integration Tests') {
             steps {
-                echo 'Running unit and integration tests...'
-                // Add your test commands here, for example: sh 'mvn test'
+                echo 'Running unit and integration tests with JUnit...'
+                // sh 'mvn test'
+            }
+            post {
+                always {
+                    emailext(
+                        subject: "Test Stage: ${currentBuild.currentResult}",
+                        body: "The test stage has completed with status: ${currentBuild.currentResult}.",
+                        to: "${RECIPIENT_EMAIL}",
+                        mimeType: 'text/plain',
+                        attachLog: true
+                    )
+                }
             }
         }
 
-        stage('Deploy Application') {
+        stage('Code Analysis') {
             steps {
-                echo 'Deploying the application...'
-                // Add your deployment commands here
+                echo 'Performing code analysis using SonarQube...'
+                // sh 'sonar-scanner'
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                echo 'Running security scan using OWASP Dependency-Check...'
+                // sh 'dependency-check --scan .'
+            }
+            post {
+                always {
+                    emailext(
+                        subject: "Security Scan Stage: ${currentBuild.currentResult}",
+                        body: "The security scan stage has completed with status: ${currentBuild.currentResult}.",
+                        to: "${RECIPIENT_EMAIL}",
+                        mimeType: 'text/plain',
+                        attachLog: true
+                    )
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                echo 'Deploying application to the staging environment on AWS...'
+                // sh 'aws deploy my-app-staging'
+            }
+        }
+
+        stage('Integration Tests on Staging') {
+            steps {
+                echo 'Running integration tests on the staging environment...'
+                // sh './run-staging-tests.sh'
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                echo 'Deploying application to the production environment on AWS...'
+                // sh 'aws deploy my-app-production'
             }
         }
     }
 
     post {
         always {
-            echo "Attempting to send email notification to: ${RECIPIENT_EMAIL}"
-            emailext(
-                subject: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
-                body: """
-                    Build Status: <strong>${currentBuild.currentResult}</strong><br>
-                    Project: ${env.JOB_NAME} <br>
-                    Build Number: ${env.BUILD_NUMBER} <br>
-                    Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a><br>
-                    Check the attached build log for details.
-                """,
-                to: "${RECIPIENT_EMAIL}",
-                mimeType: 'text/html',
-                attachLog: true
-            )
-            echo "Email notification attempt completed for: ${RECIPIENT_EMAIL}"
-        }
-
-        success {
-            echo "Sending success email to: ${RECIPIENT_EMAIL}"
-            emailext(
-                subject: "SUCCESS: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
-                body: """
-                    The build was successful for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}.<br>
-                    Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
-                """,
-                to: "${RECIPIENT_EMAIL}",
-                mimeType: 'text/html',
-                attachLog: true
-            )
-            echo "Success email sent to: ${RECIPIENT_EMAIL}"
-        }
-
-        failure {
-            echo "Sending failure email to: ${RECIPIENT_EMAIL}"
-            emailext(
-                subject: "FAILURE: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
-                body: """
-                    The build failed for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}.<br>
-                    Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
-                """,
-                to: "${RECIPIENT_EMAIL}",
-                mimeType: 'text/html',
-                attachLog: true
-            )
-            echo "Failure email sent to: ${RECIPIENT_EMAIL}"
+            echo "Pipeline execution completed."
         }
     }
 }
