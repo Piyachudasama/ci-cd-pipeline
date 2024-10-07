@@ -9,23 +9,21 @@ pipeline {
         stage('Build Application') {
             steps {
                 echo 'Building the application...'
-                // Uncomment and add your build commands if needed
-                // sh 'mvn clean install'
+                // Add your build commands here, for example: sh 'mvn clean install'
             }
         }
 
         stage('Run Unit and Integration Tests') {
             steps {
                 echo 'Running unit and integration tests...'
-                // Uncomment and add your test commands if needed
-                // sh 'mvn test'
+                // Add your test commands here, for example: sh 'mvn test'
             }
         }
 
         stage('Deploy Application') {
             steps {
                 echo 'Deploying the application...'
-                // Uncomment and add your deployment commands if needed
+                // Add your deployment commands here
             }
         }
     }
@@ -34,11 +32,13 @@ pipeline {
         always {
             echo "Attempting to send email notification to: ${RECIPIENT_EMAIL}"
             emailext(
-                subject: "Pipeline Completed: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                subject: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
                 body: """
-                    <p><strong>Pipeline Status:</strong> ${currentBuild.currentResult}</p>
-                    <p><strong>Build Details:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                    <p>Please check the logs for more details.</p>
+                    Build Status: <strong>${currentBuild.currentResult}</strong><br>
+                    Project: ${env.JOB_NAME} <br>
+                    Build Number: ${env.BUILD_NUMBER} <br>
+                    Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a><br>
+                    Check the attached build log for details.
                 """,
                 to: "${RECIPIENT_EMAIL}",
                 mimeType: 'text/html',
@@ -50,10 +50,10 @@ pipeline {
         success {
             echo "Sending success email to: ${RECIPIENT_EMAIL}"
             emailext(
-                subject: "SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                subject: "SUCCESS: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
                 body: """
-                    <p>The build was successful for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}.</p>
-                    <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    The build was successful for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}.<br>
+                    Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
                 """,
                 to: "${RECIPIENT_EMAIL}",
                 mimeType: 'text/html',
@@ -65,10 +65,10 @@ pipeline {
         failure {
             echo "Sending failure email to: ${RECIPIENT_EMAIL}"
             emailext(
-                subject: "FAILURE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                subject: "FAILURE: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}",
                 body: """
-                    <p>The build failed for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}.</p>
-                    <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    The build failed for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}.<br>
+                    Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
                 """,
                 to: "${RECIPIENT_EMAIL}",
                 mimeType: 'text/html',
